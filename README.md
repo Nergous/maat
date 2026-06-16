@@ -21,6 +21,7 @@ import "github.com/Nergous/argos/stack"
 | Package            | Description                                                   | Docs                          |
 | ------------------ | ------------------------------------------------------------- | ----------------------------- |
 | [`stack`](./stack) | Generic, slice-backed LIFO stack with non-consuming iteration. | [README](./stack/README.md) |
+| [`queue`](./queue) | Generic, slice-backed FIFO queue with non-consuming iteration. | [README](./queue/README.md) |
 
 More containers are on the way.
 
