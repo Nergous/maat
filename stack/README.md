@@ -2,14 +2,14 @@
 
 A generic, slice-backed **LIFO** (last-in, first-out) stack for Go.
 
-It is part of the `argos` data-structures library. The stack is small,
+It is part of the `maat` data-structures library. The stack is small,
 allocation-friendly, and uses Go 1.23 range-over-func iterators
 ([`iter.Seq`](https://pkg.go.dev/iter#Seq)) for non-consuming iteration.
 
 ## Install
 
 ```go
-import "github.com/Nergous/argos/stack"
+import "github.com/Nergous/maat/stack"
 ```
 
 Requires Go 1.23+ (for range-over-func). The module targets Go 1.26.
@@ -22,7 +22,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/Nergous/argos/stack"
+	"github.com/Nergous/maat/stack"
 )
 
 func main() {
@@ -221,9 +221,7 @@ so the result can be pushed to immediately.
 
 The **mutating** methods — `Push`, `PushN`, `Grow`, `Clear`, `Reset`, `Shrink`
 and `Clip` — need a non-nil receiver to store their results, so they **panic**
-on a `nil` stack. (`Grow` is the lone exception when `n <= 0`, where it returns
-without touching the receiver.) Create the stack with `New` or `NewWithCap`
-before mutating it.
+on a `nil` stack. Create the stack with `New` or `NewWithCap` before mutating it.
 
 ## Concurrency
 
@@ -247,8 +245,8 @@ go test -bench=. -benchmem ./stack/...
 View the documentation locally:
 
 ```sh
-go doc github.com/Nergous/argos/stack          # package overview
-go doc github.com/Nergous/argos/stack Stack    # the Stack type and its methods
+go doc github.com/Nergous/maat/stack          # package overview
+go doc github.com/Nergous/maat/stack Stack    # the Stack type and its methods
 ```
 
 The same comments render on pkg.go.dev-style godoc.

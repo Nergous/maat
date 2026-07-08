@@ -236,6 +236,34 @@ func TestQueue_Cap(t *testing.T) {
 			t.Errorf("Cap() = %d, want 4 (no realloc expected within cap)", got)
 		}
 	})
+
+	t.Run("stays stable when elements are popped", func(t *testing.T) {
+		q := NewWithCap[int](4)
+		q.PushN(1, 2, 3, 4)
+		q.Pop()
+		q.Pop()
+
+		if got := q.Cap(); got != 4 {
+			t.Errorf("Cap() after two Pop() calls = %d, want 4", got)
+		}
+	})
+
+	t.Run("reuses front slots after pop without growing", func(t *testing.T) {
+		q := NewWithCap[int](4)
+		q.PushN(1, 2, 3, 4)
+		q.Pop()
+		q.Pop()
+
+		q.Push(5)
+		q.Push(6)
+
+		if got := q.Cap(); got != 4 {
+			t.Errorf("Cap() after wraparound pushes = %d, want 4", got)
+		}
+		if got, want := q.Slice(), []int{3, 4, 5, 6}; !equalInts(got, want) {
+			t.Errorf("Slice() after wraparound pushes = %v, want %v", got, want)
+		}
+	})
 }
 
 func TestQueue_Clear(t *testing.T) {
@@ -318,6 +346,55 @@ func TestQueue_Reset(t *testing.T) {
 			t.Errorf("Pop() on emptied queue = (%d, true), want ok = false", v)
 		}
 	})
+
+	t.Run("preserves full capacity after pops", func(t *testing.T) {
+		q := NewWithCap[int](8)
+		q.PushN(1, 2, 3, 4, 5)
+		q.Pop()
+		q.Pop()
+
+		q.Reset()
+
+		if got := q.Cap(); got != 8 {
+			t.Errorf("Cap() after Pop(), Pop(), Reset() = %d, want 8", got)
+		}
+	})
+}
+
+func TestQueue_Wraparound(t *testing.T) {
+	q := NewWithCap[int](5)
+	q.PushN(1, 2, 3, 4, 5)
+
+	for _, want := range []int{1, 2, 3} {
+		if got, ok := q.Pop(); !ok || got != want {
+			t.Fatalf("Pop() = (%d, %v), want (%d, true)", got, ok, want)
+		}
+	}
+
+	q.PushN(6, 7, 8)
+
+	if got := q.Cap(); got != 5 {
+		t.Errorf("Cap() after wraparound = %d, want 5", got)
+	}
+	if got, want := q.Slice(), []int{4, 5, 6, 7, 8}; !equalInts(got, want) {
+		t.Errorf("Slice() across wraparound = %v, want %v", got, want)
+	}
+
+	var iterated []int
+	for v := range q.All() {
+		iterated = append(iterated, v)
+	}
+	if want := []int{4, 5, 6, 7, 8}; !equalInts(iterated, want) {
+		t.Errorf("All() across wraparound = %v, want %v", iterated, want)
+	}
+
+	c := q.Clone()
+	q.Pop()
+	q.Push(9)
+
+	if got, want := c.Slice(), []int{4, 5, 6, 7, 8}; !equalInts(got, want) {
+		t.Errorf("Clone().Slice() across wraparound = %v, want %v", got, want)
+	}
 }
 
 func TestQueue_PushN(t *testing.T) {
@@ -358,6 +435,72 @@ func TestQueue_PushN(t *testing.T) {
 		// without a second growth step.
 		if got := q.Cap(); got < 8 {
 			t.Errorf("Cap() after PushN(8 elems) = %d, want >= 8", got)
+		}
+	})
+}
+
+func TestQueue_PopN(t *testing.T) {
+	t.Run("pops up to n elements in FIFO order", func(t *testing.T) {
+		q := New[int]()
+		q.PushN(1, 2, 3, 4)
+
+		if got, want := q.PopN(3), []int{1, 2, 3}; !equalInts(got, want) {
+			t.Errorf("PopN(3) = %v, want %v", got, want)
+		}
+		if got, want := q.Slice(), []int{4}; !equalInts(got, want) {
+			t.Errorf("remaining Slice() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("larger than len drains queue", func(t *testing.T) {
+		q := NewWithCap[int](4)
+		q.PushN(1, 2)
+
+		if got, want := q.PopN(10), []int{1, 2}; !equalInts(got, want) {
+			t.Errorf("PopN(10) = %v, want %v", got, want)
+		}
+		if got := q.Len(); got != 0 {
+			t.Errorf("Len() after PopN(10) = %d, want 0", got)
+		}
+		if got := q.Cap(); got != 4 {
+			t.Errorf("Cap() after PopN(10) = %d, want 4", got)
+		}
+	})
+
+	t.Run("non-positive n returns nil", func(t *testing.T) {
+		q := New[int]()
+		q.PushN(1, 2)
+
+		if got := q.PopN(0); got != nil {
+			t.Errorf("PopN(0) = %v, want nil", got)
+		}
+		if got := q.PopN(-1); got != nil {
+			t.Errorf("PopN(-1) = %v, want nil", got)
+		}
+		if got := q.Len(); got != 2 {
+			t.Errorf("Len() after non-positive PopN = %d, want 2", got)
+		}
+	})
+
+	t.Run("works across wraparound", func(t *testing.T) {
+		q := NewWithCap[int](5)
+		q.PushN(1, 2, 3, 4, 5)
+		q.Pop()
+		q.Pop()
+		q.PushN(6, 7)
+
+		if got, want := q.PopN(4), []int{3, 4, 5, 6}; !equalInts(got, want) {
+			t.Errorf("PopN(4) across wraparound = %v, want %v", got, want)
+		}
+		if got, want := q.Slice(), []int{7}; !equalInts(got, want) {
+			t.Errorf("remaining Slice() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("nil receiver returns nil", func(t *testing.T) {
+		var q *Queue[int]
+		if got := q.PopN(3); got != nil {
+			t.Errorf("nil.PopN(3) = %v, want nil", got)
 		}
 	})
 }
@@ -869,7 +1012,10 @@ func TestQueue_NilReceiver_MutatorsPanic(t *testing.T) {
 	}{
 		{name: "Push", call: func(q *Queue[int]) { q.Push(1) }},
 		{name: "PushN", call: func(q *Queue[int]) { q.PushN(1, 2) }},
+		{name: "PushN with no arguments", call: func(q *Queue[int]) { q.PushN() }},
 		{name: "Grow", call: func(q *Queue[int]) { q.Grow(8) }},
+		{name: "Grow zero", call: func(q *Queue[int]) { q.Grow(0) }},
+		{name: "Grow negative", call: func(q *Queue[int]) { q.Grow(-1) }},
 		{name: "Clear", call: func(q *Queue[int]) { q.Clear() }},
 		{name: "Reset", call: func(q *Queue[int]) { q.Reset() }},
 		{name: "Shrink", call: func(q *Queue[int]) { q.Shrink() }},

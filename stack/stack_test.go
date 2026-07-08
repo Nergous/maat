@@ -737,7 +737,10 @@ func TestStack_NilReceiver_MutatorsPanic(t *testing.T) {
 	}{
 		{name: "Push", call: func(s *Stack[int]) { s.Push(1) }},
 		{name: "PushN", call: func(s *Stack[int]) { s.PushN(1, 2) }},
+		{name: "PushN with no arguments", call: func(s *Stack[int]) { s.PushN() }},
 		{name: "Grow", call: func(s *Stack[int]) { s.Grow(8) }},
+		{name: "Grow zero", call: func(s *Stack[int]) { s.Grow(0) }},
+		{name: "Grow negative", call: func(s *Stack[int]) { s.Grow(-1) }},
 		{name: "Clear", call: func(s *Stack[int]) { s.Clear() }},
 		{name: "Reset", call: func(s *Stack[int]) { s.Reset() }},
 		{name: "Shrink", call: func(s *Stack[int]) { s.Shrink() }},

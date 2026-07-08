@@ -1,8 +1,8 @@
 # queue
 
-A generic, slice-backed **FIFO** (first-in, first-out) queue for Go.
+A generic, slice-backed ring-buffer **FIFO** (first-in, first-out) queue for Go.
 
-It is part of the `argos` data-structures library. The queue is small,
+It is part of the `maat` data-structures library. The queue is small,
 allocation-friendly, and follows the same standard-library conventions as the
 rest of the collection (the `(value, ok)` contract, explicit memory control,
 non-consuming iteration, and a usable nil/zero value for reads).
@@ -10,7 +10,7 @@ non-consuming iteration, and a usable nil/zero value for reads).
 ## Install
 
 ```go
-import "github.com/Nergous/argos/queue"
+import "github.com/Nergous/maat/queue"
 ```
 
 Requires Go 1.23+. The module targets Go 1.26.
@@ -23,7 +23,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/Nergous/argos/queue"
+	"github.com/Nergous/maat/queue"
 )
 
 func main() {
@@ -57,25 +57,27 @@ fmt.Println(q.Len(), q.Cap()) // 3 3
 | `New`             | `func New[T any]() *Queue[T]`              | Creates an empty queue with no preallocated capacity.                                                   | O(1)           |
 | `NewWithCap`      | `func NewWithCap[T any](n int) *Queue[T]`  | Creates an empty queue with capacity preallocated for at least `n` elements (a negative `n` is clamped to 0). | O(n)           |
 | `Len`             | `func (q *Queue[T]) Len() int`             | Number of elements currently in the queue.                                                              | O(1)           |
-| `Cap`             | `func (q *Queue[T]) Cap() int`             | Capacity of the backing array from the current front; it shrinks as elements are popped (see below).    | O(1)           |
+| `Cap`             | `func (q *Queue[T]) Cap() int`             | Capacity of the backing ring buffer; it does not shrink when elements are popped.                       | O(1)           |
 | `IsEmpty`         | `func (q *Queue[T]) IsEmpty() bool`        | Reports whether the queue has no elements.                                                              | O(1)           |
 | `Peek`            | `func (q *Queue[T]) Peek() (T, bool)`      | Returns the front element (the oldest) without removing it; `ok` is `false` and the value is the zero value if empty. | O(1)           |
 | `All`             | `func (q *Queue[T]) All() iter.Seq[T]`     | Range-over-func iterator over the elements front→back (FIFO), without consuming them.                   | O(n)           |
 | `Push`            | `func (q *Queue[T]) Push(v T)`             | Adds `v` to the back of the queue.                                                                      | amortized O(1) |
 | `PushN`           | `func (q *Queue[T]) PushN(vs ...T)`        | Bulk-enqueues `vs` in order (last argument at the back), growing the backing array at most once.       | amortized O(k) |
 | `Pop`             | `func (q *Queue[T]) Pop() (T, bool)`       | Removes and returns the front element (the oldest); `ok` is `false` and the value is the zero value if empty. | O(1)           |
+| `PopN`            | `func (q *Queue[T]) PopN(n int) []T`       | Removes and returns up to `n` front elements in FIFO order; preserves capacity.                        | O(k)           |
 | `Clone`           | `func (q *Queue[T]) Clone() *Queue[T]`     | Returns an independent shallow copy sharing no backing array.                                           | O(n)           |
 | `Slice`           | `func (q *Queue[T]) Slice() []T`           | Returns an independent copy of the elements front→back (FIFO); an empty queue returns `nil`.            | O(n)           |
 | `Grow`            | `func (q *Queue[T]) Grow(n int)`           | Reserves capacity for at least `n` more elements; no-op when `n <= 0`.                                  | O(n)           |
 | `Shrink`          | `func (q *Queue[T]) Shrink()`              | Copies the elements into a new right-sized array, releasing the larger one immediately.                 | O(n)           |
-| `Clip`            | `func (q *Queue[T]) Clip()`                | Reslices the backing array down to `Len` without copying; memory is reclaimed lazily.                  | O(1)           |
+| `Clip`            | `func (q *Queue[T]) Clip()`                | Reduces reported capacity to `Len`; copies only when wrapped elements need compaction.                 | O(n) worst case |
 | `Clear`           | `func (q *Queue[T]) Clear()`               | Removes all elements **and releases** the backing array (`Cap` drops to 0).                            | O(1)           |
 | `Reset`           | `func (q *Queue[T]) Reset()`               | Removes all elements but **keeps** the backing array for reuse (`Cap` preserved).                      | O(n)           |
 
 Read-only methods (`Len`, `Cap`, `IsEmpty`, `Peek`, `All`, `Slice`, `Clone`)
-treat a `nil *Queue[T]` as a valid empty queue and never panic. The mutating
-methods (`Push`, `PushN`, `Grow`, `Shrink`, `Clip`, `Clear`, `Reset`) require a
-non-nil receiver and panic on a nil one.
+and empty-removal methods (`Pop`, `PopN`) treat a `nil *Queue[T]` as a valid
+empty queue and never panic. Methods that store or resize data (`Push`, `PushN`,
+`Grow`, `Shrink`, `Clip`, `Clear`, `Reset`) require a non-nil receiver and panic
+on a nil one.
 
 ### The `(T, bool)` contract
 
@@ -93,7 +95,8 @@ if !ok {
 ### FIFO order
 
 A queue removes elements in the same order they were added: `Push` appends to the
-back, `Pop` and `Peek` operate on the front (the oldest element still present).
+back, `Pop`, `PopN`, and `Peek` operate on the front (the oldest element still
+present).
 
 ```go
 q := queue.New[string]()
@@ -137,6 +140,24 @@ fmt.Println(front) // 1
 
 With no arguments it is a no-op.
 
+### Batch pop with `PopN`
+
+`PopN` removes up to `n` elements from the front and returns them in FIFO order.
+If `n` is larger than the current length, it drains the queue. If `n <= 0`, or
+the queue is empty or nil, it returns `nil`.
+
+```go
+q := queue.New[int]()
+q.PushN(1, 2, 3, 4)
+
+batch := q.PopN(3)
+fmt.Println(batch) // [1 2 3]
+fmt.Println(q.Slice()) // [4]
+```
+
+`PopN` preserves the backing capacity, so it works well for batch consumers that
+reuse the same queue.
+
 ### Copying out with `Clone` and `Slice`
 
 `Clone` returns an independent queue; `Slice` returns a plain slice. Both are
@@ -162,7 +183,7 @@ empty queue.
 ## Capacity management
 
 The queue grows automatically, but several methods let you control the backing
-array explicitly:
+ring buffer explicitly:
 
 - **Reserve ahead** — `NewWithCap(n)` preallocates at construction; `Grow(n)`
   reserves room for `n` more elements on an existing queue so subsequent pushes
@@ -170,23 +191,25 @@ array explicitly:
 - **Reclaim memory** — `Shrink` and `Clip` shrink the capacity to the current
   length (see below); `Clear` releases the backing array entirely.
 - **Reuse memory** — `Reset` empties the queue but keeps the capacity for refilling.
+- **Stable capacity** — `Pop` and `PopN` free slots for reuse, but they do not
+  reduce the value reported by `Cap`.
 
 ## `Shrink` vs `Clip`
 
 Both reduce the capacity to the current length, but they make opposite
 trade-offs between work done now and memory reclaimed now:
 
-| Operation | Copies?            | Cost | Frees unused memory                  | Use when                                                       |
-| --------- | ------------------ | ---- | ------------------------------------ | -------------------------------------------------------------- |
-| `Shrink`  | yes (new array)    | O(n) | immediately                          | The queue grew large, has shrunk, and you want the memory back now. |
-| `Clip`    | no (reslice)       | O(1) | only on the next growth (reallocation) | You want the cheap version and can wait for memory to be reclaimed lazily. |
+| Operation | Copies?                         | Cost          | Frees unused memory                  | Use when                                                       |
+| --------- | ------------------------------- | ------------- | ------------------------------------ | -------------------------------------------------------------- |
+| `Shrink`  | yes (new array)                 | O(n)          | immediately                          | The queue grew large, has shrunk, and you want the memory back now. |
+| `Clip`    | only if wrapped elements require compaction | O(n) worst case | not guaranteed immediately           | You want reported capacity trimmed to `Len` and can accept lazy reclaim. |
 
 ```go
 q := queue.NewWithCap[int](1024)
 q.PushN(1, 2, 3)
 
 q.Clip()
-fmt.Println(q.Len(), q.Cap()) // 3 3  — O(1) reslice, old array still retained
+fmt.Println(q.Len(), q.Cap()) // 3 3  — compact reported capacity
 
 q.Grow(2000)
 q.Shrink()
@@ -218,15 +241,12 @@ q.Clear()
 fmt.Println(q.Len(), q.Cap()) // 0 0  — backing array released
 ```
 
-### A note on `Cap` and `Pop`
+### Ring-buffer capacity
 
-`Pop` advances the front by reslicing the backing array (`data = data[1:]`), so
-the capacity reported by `Cap` — measured from the current front — shrinks as
-elements are popped, even though the queue has not reallocated. `Reset` keeps
-whatever capacity remains at the moment it is called; if you have popped
-elements first, that is the already-reduced capacity, not the original. Call
-`Reset` on a fully drained queue (or before popping) to retain the full backing
-array.
+The queue stores elements in a ring buffer. When elements are popped, their
+slots become available for later pushes; the buffer does not have to slide or
+shrink. This keeps `Cap` stable across `Pop`/`PopN` and lets `Reset` preserve the
+full allocation even after many removals.
 
 ## Nil receiver
 
@@ -242,6 +262,7 @@ q.IsEmpty()    // true
 q.Cap()        // 0
 v, ok := q.Peek() // 0, false
 v, ok = q.Pop()   // 0, false (nothing to remove)
+q.PopN(3)      // nil
 q.Slice()      // nil
 for range q.All() { /* never runs */ }
 ```
@@ -249,11 +270,9 @@ for range q.All() { /* never runs */ }
 `Clone` on a nil receiver returns a **new, usable empty queue** (never `nil`),
 so the result can be pushed to immediately.
 
-The **mutating** methods — `Push`, `PushN`, `Grow`, `Clear`, `Reset`, `Shrink`
-and `Clip` — need a non-nil receiver to store their results, so they **panic**
-on a `nil` queue. (`Grow` is the lone exception when `n <= 0`, where it returns
-without touching the receiver.) Create the queue with `New` or `NewWithCap`
-before mutating it.
+Methods that store or resize data — `Push`, `PushN`, `Grow`, `Clear`, `Reset`,
+`Shrink` and `Clip` — need a non-nil receiver, so they **panic** on a `nil`
+queue. Create the queue with `New` or `NewWithCap` before calling them.
 
 ## Concurrency
 
@@ -277,8 +296,8 @@ go test -bench=. -benchmem ./queue/...
 View the documentation locally:
 
 ```sh
-go doc github.com/Nergous/argos/queue          # package overview
-go doc github.com/Nergous/argos/queue Queue    # the Queue type and its methods
+go doc github.com/Nergous/maat/queue          # package overview
+go doc github.com/Nergous/maat/queue Queue    # the Queue type and its methods
 ```
 
 The same comments render on pkg.go.dev-style godoc.

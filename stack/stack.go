@@ -102,6 +102,39 @@ func (s *Stack[T]) All() iter.Seq[T] {
 	}
 }
 
+// Clone returns an independent shallow copy of the stack. The two stacks share
+// no backing array, so mutating one (pushing, popping, clearing) does not affect
+// the other. Elements are copied as-is: if T is a pointer or contains
+// references, the pointed-to data is shared between the copies. Runs in O(n).
+//
+// A nil receiver, treated everywhere as an empty stack, clones to a new, usable
+// empty stack (never nil), so the result can be pushed to without a further
+// [New] call.
+func (s *Stack[T]) Clone() *Stack[T] {
+	if s == nil {
+		return New[T]()
+	}
+
+	return &Stack[T]{
+		data: append([]T(nil), s.data...),
+	}
+}
+
+// Slice returns a copy of the stack's elements from top to bottom (LIFO), the
+// same order [Stack.All] yields. The returned slice is independent of the stack:
+// they share no backing array, so callers may modify it freely without affecting
+// the stack, and vice versa. An empty stack returns nil; a nil receiver is
+// treated as empty and likewise returns nil. Runs in O(n).
+func (s *Stack[T]) Slice() []T {
+	if s == nil || len(s.data) == 0 {
+		return nil
+	}
+
+	out := slices.Clone(s.data)
+	slices.Reverse(out)
+	return out
+}
+
 // Push adds v to the top of the stack. It runs in amortized O(1) time; the
 // backing array may be reallocated to grow.
 //
@@ -166,39 +199,6 @@ func (s *Stack[T]) Reset() {
 	s.data = s.data[:0]
 }
 
-// Clone returns an independent shallow copy of the stack. The two stacks share
-// no backing array, so mutating one (pushing, popping, clearing) does not affect
-// the other. Elements are copied as-is: if T is a pointer or contains
-// references, the pointed-to data is shared between the copies. Runs in O(n).
-//
-// A nil receiver, treated everywhere as an empty stack, clones to a new, usable
-// empty stack (never nil), so the result can be pushed to without a further
-// [New] call.
-func (s *Stack[T]) Clone() *Stack[T] {
-	if s == nil {
-		return New[T]()
-	}
-
-	return &Stack[T]{
-		data: append([]T(nil), s.data...),
-	}
-}
-
-// Slice returns a copy of the stack's elements from top to bottom (LIFO), the
-// same order [Stack.All] yields. The returned slice is independent of the stack:
-// they share no backing array, so callers may modify it freely without affecting
-// the stack, and vice versa. An empty stack returns nil; a nil receiver is
-// treated as empty and likewise returns nil. Runs in O(n).
-func (s *Stack[T]) Slice() []T {
-	if s == nil || len(s.data) == 0 {
-		return nil
-	}
-
-	out := slices.Clone(s.data)
-	slices.Reverse(out)
-	return out
-}
-
 // Shrink reduces the backing array to hold exactly Len elements, copying them
 // into a new, right-sized array so the previous (larger) array becomes eligible
 // for garbage collection immediately. Use it to reclaim memory after a stack
@@ -239,10 +239,12 @@ func (s *Stack[T]) Clip() {
 // is a no-op when n is non-positive or the capacity is already sufficient. It
 // panics if the new capacity overflows, the same condition as [slices.Grow].
 //
-// Grow requires a non-nil receiver and panics on a nil one (unless n is
-// non-positive, in which case it returns without touching the receiver). Create
-// the stack with [New] or [NewWithCap] first.
+// Grow requires a non-nil receiver and panics on a nil one. Create the stack
+// with [New] or [NewWithCap] first.
 func (s *Stack[T]) Grow(n int) {
+	if s == nil {
+		panic("stack: Grow on nil receiver")
+	}
 	if n <= 0 {
 		return
 	}

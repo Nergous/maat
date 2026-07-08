@@ -73,6 +73,28 @@ func BenchmarkPop(b *testing.B) {
 	}
 }
 
+// BenchmarkPopN measures draining fixed-size batches. Refilling happens outside
+// the timed section so the benchmark focuses on batch removal and result-slice
+// allocation.
+func BenchmarkPopN(b *testing.B) {
+	const batch = 128
+
+	b.ReportAllocs()
+
+	q := NewWithCap[int](batch)
+	for b.Loop() {
+		if q.Len() < batch {
+			b.StopTimer()
+			q.Reset()
+			for j := range batch {
+				q.Push(j)
+			}
+			b.StartTimer()
+		}
+		sliceSink = q.PopN(batch)
+	}
+}
+
 // BenchmarkPeek measures the cost of reading the front element, which must stay
 // O(1) and allocation-free.
 func BenchmarkPeek(b *testing.B) {
@@ -89,11 +111,8 @@ func BenchmarkPeek(b *testing.B) {
 // BenchmarkPushPopChurn measures steady-state, interleaved Push/Pop at a fixed
 // live size: each iteration pops the front and pushes a fresh element, so the
 // queue never grows beyond `live` elements. This is the queue-specific workload
-// that matters. With the current sliding-slice backing the window marches to the
-// end of the array and must periodically copy the live region into a fresh
-// allocation, so this benchmark reports recurring allocations per op; a future
-// ring-buffer backing would drive that to zero. The numbers here are the
-// baseline to beat.
+// that matters. The ring-buffer backing should keep this allocation-free after
+// the initial preallocation.
 func BenchmarkPushPopChurn(b *testing.B) {
 	const live = 16
 

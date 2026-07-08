@@ -3,7 +3,7 @@ package queue_test
 import (
 	"fmt"
 
-	"github.com/Nergous/argos/queue"
+	"github.com/Nergous/maat/queue"
 )
 
 // A queue is FIFO (first in, first out): elements come out in the same order
@@ -54,6 +54,18 @@ func ExampleQueue_Pop() {
 	// Output:
 	// first true
 	// false
+}
+
+// PopN removes up to n elements from the front and returns them in FIFO order.
+func ExampleQueue_PopN() {
+	q := queue.New[int]()
+	q.PushN(1, 2, 3, 4)
+
+	fmt.Println(q.PopN(3))
+	fmt.Println(q.Slice())
+	// Output:
+	// [1 2 3]
+	// [4]
 }
 
 // Peek returns the front element without removing it.
