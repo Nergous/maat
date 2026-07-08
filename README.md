@@ -5,6 +5,8 @@ built on the Go 1.23+ standard library, including range-over-func iterators.
 
 ![Maat containers overview](./assets/maat-overview.svg)
 
+![Maat benchmark snapshot](./assets/maat-benchmarks.svg)
+
 `maat` is a growing collection of generic container types. Each package is
 self-contained, dependency-free, and documented with runnable examples.
 

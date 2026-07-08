@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" role="img" aria-labelledby="title desc">
+  <title id="title">Maat benchmark snapshot</title>
+  <desc id="desc">Benchmark snapshot for stack, queue, and set operations in the maat Go module.</desc>
+  <style>
+    .bg { fill: #fbfaf7; }
+    .ink { fill: #14151a; }
+    .muted { fill: #687385; }
+    .panel { fill: #ffffff; stroke: #d9d2c4; stroke-width: 2; }
+    .soft { fill: #f1ede5; stroke: #d9d2c4; stroke-width: 1.5; }
+    .value { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; }
+    .blue { fill: #2563eb; }
+    .green { fill: #059669; }
+    .gold { fill: #d97706; }
+    .title { font: 800 42px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+    .subtitle { font: 500 18px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+    .h2 { font: 800 24px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+    .body { font: 650 16px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+    .small { font: 600 13px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+    .code { font: 700 16px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; letter-spacing: 0; }
+  </style>
+
+  <rect class="bg" width="1200" height="430"/>
+
+  <g transform="translate(64 42)">
+    <text class="title ink" x="0" y="0" dominant-baseline="hanging">benchmem snapshot</text>
+    <text class="subtitle muted" x="0" y="56">Windows amd64, Ryzen 7 5800X, go test -bench -benchmem -benchtime=100ms</text>
+  </g>
+
+  <g transform="translate(64 124)">
+    <rect class="panel" width="330" height="232" rx="8"/>
+    <text class="h2 ink" x="24" y="34">stack</text>
+    <text class="small muted" x="24" y="62">Hot path operations stay allocation-free.</text>
+
+    <text class="body ink" x="24" y="104">Peek</text>
+    <rect class="value" x="178" y="84" width="128" height="28" rx="6"/>
+    <text class="code ink" x="292" y="104" text-anchor="end">1.43 ns/op</text>
+
+    <text class="body ink" x="24" y="146">Pop</text>
+    <rect class="value" x="178" y="126" width="128" height="28" rx="6"/>
+    <text class="code ink" x="292" y="146" text-anchor="end">1.95 ns/op</text>
+
+    <text class="body ink" x="24" y="188">All iterator</text>
+    <rect class="value" x="178" y="168" width="128" height="28" rx="6"/>
+    <text class="code ink" x="292" y="188" text-anchor="end">0 allocs/op</text>
+  </g>
+
+  <g transform="translate(435 124)">
+    <rect class="panel" width="330" height="232" rx="8"/>
+    <text class="h2 ink" x="24" y="34">queue</text>
+    <text class="small muted" x="24" y="62">Ring-buffer churn avoids per-step allocation.</text>
+
+    <text class="body ink" x="24" y="104">Peek</text>
+    <rect class="value" x="178" y="84" width="128" height="28" rx="6"/>
+    <text class="code ink" x="292" y="104" text-anchor="end">1.44 ns/op</text>
+
+    <text class="body ink" x="24" y="146">Pop</text>
+    <rect class="value" x="178" y="126" width="128" height="28" rx="6"/>
+    <text class="code ink" x="292" y="146" text-anchor="end">2.11 ns/op</text>
+
+    <text class="body ink" x="24" y="188">Churn</text>
+    <rect class="value" x="178" y="168" width="128" height="28" rx="6"/>
+    <text class="code ink" x="292" y="188" text-anchor="end">5.82 ns/op</text>
+  </g>
+
+  <g transform="translate(806 124)">
+    <rect class="panel" width="330" height="232" rx="8"/>
+    <text class="h2 ink" x="24" y="34">set</text>
+    <text class="small muted" x="24" y="62">Lookups are fast and allocation-free.</text>
+
+    <text class="body ink" x="24" y="104">Contains hit</text>
+    <rect class="value" x="178" y="84" width="128" height="28" rx="6"/>
+    <text class="code ink" x="292" y="104" text-anchor="end">7.82 ns/op</text>
+
+    <text class="body ink" x="24" y="146">Contains miss</text>
+    <rect class="value" x="178" y="126" width="128" height="28" rx="6"/>
+    <text class="code ink" x="292" y="146" text-anchor="end">7.80 ns/op</text>
+
+    <text class="body ink" x="24" y="188">Add existing</text>
+    <rect class="value" x="178" y="168" width="128" height="28" rx="6"/>
+    <text class="code ink" x="292" y="188" text-anchor="end">16.3 ns/op</text>
+  </g>
+
+  <g transform="translate(64 378)">
+    <rect class="soft" x="0" y="0" width="260" height="34" rx="8"/>
+    <rect class="soft" x="280" y="0" width="270" height="34" rx="8"/>
+    <rect class="soft" x="570" y="0" width="262" height="34" rx="8"/>
+    <rect class="soft" x="852" y="0" width="284" height="34" rx="8"/>
+    <text class="small ink" x="130" y="22" text-anchor="middle">Peek/Pop: 0 B/op</text>
+    <text class="small ink" x="415" y="22" text-anchor="middle">All iterators: 0 allocs/op</text>
+    <text class="small ink" x="701" y="22" text-anchor="middle">Slice(1024): 1 alloc</text>
+    <text class="small ink" x="994" y="22" text-anchor="middle">Values vary by machine</text>
+  </g>
+</svg>
