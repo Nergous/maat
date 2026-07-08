@@ -49,14 +49,20 @@ New packages should follow the same house style:
 
 ## Priority P0
 
-These are the most likely next packages after the current baseline stabilizes:
+These packages form the core container baseline after `stack`, `queue`, and
+`set`. Without them, the library still feels incomplete as a general-purpose
+containers collection:
 
-| Package      | Type        | Summary |
-| ------------ | ----------- | ------- |
-| `binheap`    | `Heap[T]`   | Generic binary heap, min-first by default; type-safe `container/heap` replacement. |
-| `bitset`     | `Bitset`    | Dense auto-growing bit vector with word-parallel set algebra. |
-| `deque`      | `Deque[T]`  | Growable ring-buffer double-ended queue; O(1) push/pop at both ends. |
-| `orderedmap` | `Map[K, V]` | Insertion-order preserving hash map. |
+| Package      | Type                  | Summary |
+| ------------ | --------------------- | ------- |
+| `binheap`    | `Heap[T]`             | Generic binary heap, min-first by default; type-safe `container/heap` replacement. |
+| `bitset`     | `Bitset`              | Dense auto-growing bit vector with word-parallel set algebra. |
+| `deque`      | `Deque[T]`            | Growable ring-buffer double-ended queue; O(1) push/pop at both ends. |
+| `orderedmap` | `Map[K, V]`           | Insertion-order preserving hash map. |
+| `orderedset` | `Set[T]`              | Insertion-order preserving set. |
+| `pqueue`     | `PriorityQueue[E, P]` | Element/priority queue, built as a thin API over heap behavior. |
+| `sortedmap`  | `SortedMap[K, V]`     | Key-ordered map with navigation, rank/select, and ranges. |
+| `sortedset`  | `SortedSet[T]`        | Ordered set with algebra and navigation. |
 
 ## Priority P1
 
@@ -70,11 +76,6 @@ Useful general-purpose containers that should follow after P0:
 | `list`       | `List[T]`, `Element[T]` | Generic doubly linked list with element handles and splicing. |
 | `lru`        | `Cache[K, V]`           | Fixed-capacity LRU cache with O(1) operations and eviction callback. |
 | `multimap`   | `Multimap[K, V]`        | One key to many values, slice-valued, per-key insertion order. |
-| `orderedset` | `Set[T]`                | Insertion-order preserving set. |
-| `pqueue`     | `PriorityQueue[E, P]`   | Element/priority queue, built as a thin API over heap behavior. |
-| `ring`       | `Ring[T]`               | Fixed-capacity circular FIFO buffer. |
-| `sortedmap`  | `SortedMap[K, V]`       | Key-ordered map with navigation, rank/select, and ranges. |
-| `sortedset`  | `SortedSet[T]`          | Ordered set with algebra and navigation. |
 | `trie`       | `Trie[V]`               | String-keyed path-compressed prefix tree. |
 | `unionfind`  | `Dense`                 | Int-indexed disjoint-set. |
 
@@ -91,6 +92,7 @@ case:
 | `lfu`       | `Cache[K, V]`       | Fixed-capacity LFU cache. |
 | `mmheap`    | `MinMaxHeap[T]`     | Double-ended priority queue. |
 | `multimap`  | `SetMultimap[K, V]` | Value-deduplicating multimap. |
+| `ring`      | `Ring[T]`           | Fixed-capacity circular FIFO buffer. |
 | `segtree`   | `Tree[T]`           | Segment tree over a caller-supplied monoid. |
 | `sparseset` | `SparseSet`         | Sparse set of non-negative ints with O(1) reset. |
 | `table`     | `Table[R, C, V]`    | Two-keyed map: row and column to value. |
