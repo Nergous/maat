@@ -3,6 +3,8 @@
 Generic, idiomatic data structures for Go — small, allocation-friendly, and
 built on the Go 1.23+ standard library, including range-over-func iterators.
 
+![Maat containers overview](./assets/maat-overview.svg)
+
 `maat` is a growing collection of generic container types. Each package is
 self-contained, dependency-free, and documented with runnable examples.
 
