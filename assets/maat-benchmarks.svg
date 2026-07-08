@@ -33,11 +33,11 @@
 
     <text class="body ink" x="24" y="104">Peek</text>
     <rect class="value" x="178" y="84" width="128" height="28" rx="6"/>
-    <text class="code ink" x="292" y="104" text-anchor="end">1.43 ns/op</text>
+    <text class="code ink" x="292" y="104" text-anchor="end">1.41 ns/op</text>
 
     <text class="body ink" x="24" y="146">Pop</text>
     <rect class="value" x="178" y="126" width="128" height="28" rx="6"/>
-    <text class="code ink" x="292" y="146" text-anchor="end">1.95 ns/op</text>
+    <text class="code ink" x="292" y="146" text-anchor="end">1.80 ns/op</text>
 
     <text class="body ink" x="24" y="188">All iterator</text>
     <rect class="value" x="178" y="168" width="128" height="28" rx="6"/>
@@ -55,11 +55,11 @@
 
     <text class="body ink" x="24" y="146">Pop</text>
     <rect class="value" x="178" y="126" width="128" height="28" rx="6"/>
-    <text class="code ink" x="292" y="146" text-anchor="end">2.11 ns/op</text>
+    <text class="code ink" x="292" y="146" text-anchor="end">2.02 ns/op</text>
 
     <text class="body ink" x="24" y="188">Churn</text>
     <rect class="value" x="178" y="168" width="128" height="28" rx="6"/>
-    <text class="code ink" x="292" y="188" text-anchor="end">5.82 ns/op</text>
+    <text class="code ink" x="292" y="188" text-anchor="end">5.54 ns/op</text>
   </g>
 
   <g transform="translate(806 124)">
@@ -69,15 +69,15 @@
 
     <text class="body ink" x="24" y="104">Contains hit</text>
     <rect class="value" x="178" y="84" width="128" height="28" rx="6"/>
-    <text class="code ink" x="292" y="104" text-anchor="end">7.82 ns/op</text>
+    <text class="code ink" x="292" y="104" text-anchor="end">7.85 ns/op</text>
 
     <text class="body ink" x="24" y="146">Contains miss</text>
     <rect class="value" x="178" y="126" width="128" height="28" rx="6"/>
-    <text class="code ink" x="292" y="146" text-anchor="end">7.80 ns/op</text>
+    <text class="code ink" x="292" y="146" text-anchor="end">7.50 ns/op</text>
 
     <text class="body ink" x="24" y="188">Add existing</text>
     <rect class="value" x="178" y="168" width="128" height="28" rx="6"/>
-    <text class="code ink" x="292" y="188" text-anchor="end">16.3 ns/op</text>
+    <text class="code ink" x="292" y="188" text-anchor="end">7.96 ns/op</text>
   </g>
 
   <g transform="translate(64 378)">

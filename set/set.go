@@ -194,8 +194,11 @@ func (s *Set[T]) Add(v T) bool {
 	}
 
 	_, ok := s.m[v]
+	if ok {
+		return false
+	}
 	s.m[v] = struct{}{}
-	return !ok
+	return true
 }
 
 // AddN inserts all values in vs. Duplicate values are stored once. With no
